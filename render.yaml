@@ -5,6 +5,13 @@ services:
     dockerfilePath: ./Dockerfile
     plan: starter # a persistent disk requires a paid instance type
     healthCheckPath: /health # public liveness probe (WHITELIST_PATHS default)
+    # Default CORS to this service's own origin (RENDER_EXTERNAL_URL) instead of
+    # LightRAG's "*" default. The Web UI is same-origin so this is transparent to
+    # it; a forker with a SEPARATE-origin frontend sets CORS_ORIGINS explicitly
+    # and this override uses that value. Runs through the entrypoint's gosu drop.
+    dockerCommand: >
+      sh -c 'export CORS_ORIGINS="${CORS_ORIGINS:-$RENDER_EXTERNAL_URL}";
+      exec python -m lightrag.api.lightrag_server'
     disk:
       name: lightrag-data
       mountPath: /app/data

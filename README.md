@@ -63,6 +63,49 @@ concise set this template uses, and the repo's full [`env.example`](./env.exampl
 for every advanced option (alternative LLM/embedding providers, external storage
 backends like PostgreSQL/Neo4j/Milvus, reranking, and more).
 
+The Blueprint defaults `CORS_ORIGINS` to the service's own origin (via Render's
+`RENDER_EXTERNAL_URL`), so browser access is same-origin only out of the box. If
+you put a **separate-origin** frontend in front of the API, set `CORS_ORIGINS` to
+that frontend's origin.
+
+## Production storage: Render Postgres
+
+By default this template keeps all state in file-based stores on the Render Disk
+at `/app/data`. That survives restarts and redeploys and is perfect for evaluating
+LightRAG, but it's tied to a single instance's disk — no managed backups,
+point-in-time recovery, or the ability to share state across services.
+
+For production, move the state to a [Render Postgres](https://render.com/docs/postgresql-creating-connecting)
+database. Render Postgres ships with the `pgvector` extension, which is all
+LightRAG needs to back its key-value, doc-status, and **vector** stores.
+
+1. Create a Render Postgres instance in the same region as your service.
+2. Add these env vars to the web service (copy the connection details from the
+   database's dashboard page — internal hostname, port `5432`, database, user,
+   password):
+
+   ```
+   LIGHTRAG_KV_STORAGE=PGKVStorage
+   LIGHTRAG_DOC_STATUS_STORAGE=PGDocStatusStorage
+   LIGHTRAG_VECTOR_STORAGE=PGVectorStorage
+   POSTGRES_HOST=<your-db-internal-hostname>
+   POSTGRES_PORT=5432
+   POSTGRES_DATABASE=<your-db-name>
+   POSTGRES_USER=<your-db-user>
+   POSTGRES_PASSWORD=<your-db-password>
+   ```
+
+3. Redeploy. LightRAG creates its tables (and the `vector` extension) on first
+   start.
+
+> **Knowledge graph store:** LightRAG's Postgres graph backend (`PGGraphStorage`)
+> requires the Apache AGE extension, which Render Postgres does not provide. Leave
+> `LIGHTRAG_GRAPH_STORAGE` on the default `NetworkXStorage` (which stays on the
+> disk), or point it at an external managed graph database such as
+> [Neo4j Aura](https://neo4j.com/product/auradb/) via the `NEO4J_*` vars in
+> [`env.example`](./env.example). If you keep the graph on disk, keep the disk in
+> your Blueprint.
+
 ## Full documentation
 
 This README covers only the Render deployment. For LightRAG's complete
