@@ -30,7 +30,7 @@ services:
       - key: LLM_BINDING_HOST
         value: https://api.openai.com/v1
       - key: LLM_MODEL
-        value: gpt-4o-mini
+        value: gpt-5.4-mini
       - key: LLM_BINDING_API_KEY
         sync: false # your OpenAI API key
       - key: EMBEDDING_BINDING
