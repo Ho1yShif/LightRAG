@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: lightrag
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter # a persistent disk requires a paid instance type
+    healthCheckPath: /health # public liveness probe (WHITELIST_PATHS default)
+    # Default CORS to this service's own origin (RENDER_EXTERNAL_URL) instead of
+    # LightRAG's "*" default. The Web UI is same-origin so this is transparent to
+    # it; a forker with a SEPARATE-origin frontend sets CORS_ORIGINS explicitly
+    # and this override uses that value. Runs through the entrypoint's gosu drop.
+    dockerCommand: >
+      sh -c 'export CORS_ORIGINS="${CORS_ORIGINS:-$RENDER_EXTERNAL_URL}";
+      exec python -m lightrag.api.lightrag_server'
+    disk:
+      name: lightrag-data
+      mountPath: /app/data
+      sizeGB: 1
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 9621
+      - key: WORKING_DIR
+        value: /app/data/rag_storage
+      - key: INPUT_DIR
+        value: /app/data/inputs
+      - key: LLM_BINDING
+        value: openai
+      - key: LLM_BINDING_HOST
+        value: https://api.openai.com/v1
+      - key: LLM_MODEL
+        value: gpt-5.4-mini
+      - key: LLM_BINDING_API_KEY
+        sync: false # your OpenAI API key
+      - key: EMBEDDING_BINDING
+        value: openai
+      - key: EMBEDDING_BINDING_HOST
+        value: https://api.openai.com/v1
+      - key: EMBEDDING_MODEL
+        value: text-embedding-3-large
+      - key: EMBEDDING_DIM
+        value: 3072
+      - key: EMBEDDING_BINDING_API_KEY
+        sync: false # same OpenAI API key
+      - key: LIGHTRAG_API_KEY
+        sync: false # protects the deployed server; set to a strong secret
