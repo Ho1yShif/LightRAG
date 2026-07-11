@@ -30,10 +30,11 @@ Defaults use **OpenAI** for both the LLM (`gpt-5.4-mini`) and embeddings
 
 - A [Render account](https://dashboard.render.com/register).
 - An [OpenAI API key](https://platform.openai.com/api-keys) (used for both the LLM
-  and embeddings). For least privilege, create a **Restricted** key and grant only
-  **Model capabilities: Request** — that single scope covers the chat-completions
-  and embeddings calls LightRAG makes. Leave everything else (including *List
-  models*) set to **None**.
+  and embeddings). For least privilege, create a **Restricted** key and, under
+  **Model capabilities**, enable only **Chat completions** (`/v1/chat/completions`)
+  and **Embeddings** (`/v1/embeddings`) — the only endpoints LightRAG calls. Leave
+  the other capabilities (Responses, Text-to-speech, Realtime, Images, Moderations)
+  and all other permission groups (e.g. *List models*) set to **None**.
 
 ## Deploy
 
@@ -44,7 +45,7 @@ Defaults use **OpenAI** for both the LLM (`gpt-5.4-mini`) and embeddings
 
    | Env var | What to set it to |
    | --- | --- |
-   | `LLM_BINDING_API_KEY` | Your OpenAI API key. A **Restricted** key with only *Model capabilities: Request* is enough (see [Prerequisites](#prerequisites)). |
+   | `LLM_BINDING_API_KEY` | Your OpenAI API key. A **Restricted** key with only *Chat completions* + *Embeddings* enabled is enough (see [Prerequisites](#prerequisites)). |
    | `EMBEDDING_BINDING_API_KEY` | The same OpenAI API key. |
    | `LIGHTRAG_API_KEY` | A strong secret **you choose** — it protects your deployed server and Web UI. Generate one with the command below. |
 
