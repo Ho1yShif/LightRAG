@@ -21,8 +21,10 @@ web service:
   survives restarts and redeploys (default storage is file-based:
   `JsonKVStorage` / `NanoVectorDBStorage` / `NetworkXStorage`).
 
-Defaults use **OpenAI** for both the LLM and embeddings (one API key covers both);
-both are swappable via `LLM_BINDING` / `EMBEDDING_BINDING`.
+Defaults use **OpenAI** for both the LLM (`gpt-5.4-mini`) and embeddings
+(`text-embedding-3-large`) — one API key covers both, and both are swappable via
+`LLM_BINDING` / `EMBEDDING_BINDING` (set `LLM_MODEL` to any OpenAI model, e.g. the
+`gpt-5.6-*` flagships for higher quality at higher cost).
 
 ## Prerequisites
 
