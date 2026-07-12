@@ -74,7 +74,10 @@ const ApiKeyAlert = ({ open: opened, onOpenChange: setOpened }: ApiKeyAlertProps
               {t('apiKeyAlert.save')}
             </Button>
           </form>
-          {message && (
+          {/* Don't surface the "API Key required" 403 as an error: on first load
+              it just means no key has been entered yet, and the dialog itself is
+              the prompt. Only show genuine errors (e.g. an invalid key). */}
+          {message && !message.includes(RequireApiKeError) && (
             <div className="text-sm text-red-500">
               {message}
             </div>
