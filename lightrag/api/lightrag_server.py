@@ -1259,8 +1259,13 @@ def create_app(args):
         if not os.path.exists(args.ssl_keyfile):
             raise Exception(f"SSL key file not found: {args.ssl_keyfile}")
 
+    # Public read-only demo mode: disable auth so the WebUI loads without a key
+    # prompt (read-only enforcement is layered on below via DemoReadOnlyMiddleware).
+    # This intentionally overrides any LIGHTRAG_API_KEY present in the environment.
+    demo_mode = bool(getattr(args, "demo", False))
+
     # Check if API key is provided either through env var or args
-    api_key = os.getenv("LIGHTRAG_API_KEY") or args.key
+    api_key = None if demo_mode else (os.getenv("LIGHTRAG_API_KEY") or args.key)
 
     # Initialize document manager with workspace support for data isolation
     doc_manager = DocumentManager(args.input_dir, workspace=args.workspace)
@@ -1381,6 +1386,19 @@ def create_app(args):
     # docstring.
     if api_prefix:
         app.add_middleware(_RootPathNormalizationMiddleware)
+
+    # Read-only public demo enforcement. Installed only when DEMO=true, before
+    # CORS so CORS stays the outermost layer (preflight handling + headers on
+    # the 403/429 responses). Blocks mutating routes and rate-limits the
+    # LLM-invoking endpoints — see lightrag/api/demo.py.
+    if demo_mode:
+        from lightrag.api.demo import DemoReadOnlyMiddleware
+
+        app.add_middleware(
+            DemoReadOnlyMiddleware,
+            api_prefix=api_prefix,
+            rate_limit_per_minute=getattr(args, "demo_rate_limit_per_minute", 0),
+        )
 
     # Add CORS middleware
     cors_origins = get_cors_origins()
@@ -2174,6 +2192,7 @@ def create_app(args):
                 "api_version": api_version_display,
                 "webui_title": webui_title,
                 "webui_description": webui_description,
+                "demo_mode": demo_mode,
             }
 
         return {
@@ -2183,6 +2202,7 @@ def create_app(args):
             "api_version": api_version_display,
             "webui_title": webui_title,
             "webui_description": webui_description,
+            "demo_mode": demo_mode,
         }
 
     @app.post("/login")
@@ -2332,6 +2352,7 @@ def create_app(args):
                 "webui_description": webui_description,
                 "pipeline_busy": pipeline_busy,
                 "pipeline_active": pipeline_active,
+                "demo_mode": demo_mode,
             }
 
             # Sensitive runtime configuration and operational diagnostics

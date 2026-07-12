@@ -43,3 +43,17 @@ services:
         sync: false # same OpenAI API key
       - key: LIGHTRAG_API_KEY
         sync: false # protects the deployed server; set to a strong secret
+        # NOTE: LIGHTRAG_API_KEY is IGNORED when DEMO=true (see below).
+      # DEMO mode: run this deployment as a PUBLIC, READ-ONLY demo. Authentication
+      # is disabled (the Web UI loads without a key prompt) and every mutating
+      # operation (upload/insert/edit/delete/merge) is blocked. Visitors can
+      # browse the knowledge graph and run LLM queries. Default false keeps the
+      # deployment fully token-gated. LLM/embedding provider keys are still
+      # required — the demo answers real queries on your provider account.
+      - key: DEMO
+        value: false
+      # Per-IP cap (fixed 60s window) on LLM-invoking query endpoints; protects
+      # your provider key on a public demo. Only active when DEMO=true. 0 disables.
+      # Note: per-process (not shared across gunicorn workers / instances).
+      - key: DEMO_RATE_LIMIT_PER_MINUTE
+        value: 20

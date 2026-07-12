@@ -125,6 +125,32 @@ The Blueprint defaults `CORS_ORIGINS` to the service's own origin (via Render's
 you put a **separate-origin** frontend in front of the API, set `CORS_ORIGINS` to
 that frontend's origin.
 
+## Public read-only demo mode
+
+Want to share a live, no-login demo of a knowledge base you've built? Set
+`DEMO=true` on the service. In demo mode:
+
+- **No authentication.** The Web UI loads without prompting for a key, and any
+  `LIGHTRAG_API_KEY` / `AUTH_ACCOUNTS` you set is ignored. The server is fully
+  public.
+- **Read-only.** Every mutating or destructive operation — document
+  upload/insert/scan/delete/clear, cache clearing, and graph entity/relation
+  create/edit/delete/merge — is blocked with HTTP `403`. The Web UI hides those
+  controls and shows a banner. Browsing the graph and running LLM queries stay
+  available.
+- **Cost protection.** `DEMO_RATE_LIMIT_PER_MINUTE` (default `20`, `0` disables)
+  caps LLM-invoking query requests per client IP in a fixed 60-second window and
+  returns `429` when exceeded. This protects the provider key your demo answers
+  queries on. The counter is per process (not shared across gunicorn workers or
+  instances) — fine for a single-instance starter demo.
+
+Your LLM/embedding provider keys are still required: the demo answers real
+queries on your account. Default `DEMO=false` keeps forks fully token-gated
+unless you opt in.
+
+> **Only enable `DEMO=true` on a deployment you intend to expose publicly**, with
+> a knowledge base you're happy for anyone to read and query.
+
 ## Production storage: Render Postgres
 
 By default this template keeps all state in file-based stores on the Render Disk

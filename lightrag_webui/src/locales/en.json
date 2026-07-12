@@ -481,6 +481,10 @@
     "placeholder": "Enter your API key",
     "save": "Save"
   },
+  "demoBanner": {
+    "message": "Read-only demo — explore and query the knowledge graph; uploading and editing are disabled.",
+    "dismiss": "Dismiss"
+  },
   "pagination": {
     "showing": "Showing {{start}} to {{end}} of {{total}} entries",
     "page": "Page",

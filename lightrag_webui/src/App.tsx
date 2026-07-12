@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import ThemeProvider from '@/components/ThemeProvider'
 import TabVisibilityProvider from '@/contexts/TabVisibilityProvider'
 import ApiKeyAlert from '@/components/ApiKeyAlert'
+import DemoBanner from '@/components/DemoBanner'
 import StatusIndicator from '@/components/status/StatusIndicator'
 import { SiteInfo, webuiPrefix } from '@/lib/constants'
 import { useBackendState, useAuthStore } from '@/stores/state'
@@ -112,6 +113,10 @@ function App() {
         const token = localStorage.getItem('LIGHTRAG-API-TOKEN');
         const status = await getAuthStatus();
 
+        // Surface read-only public demo mode (server-driven) so the UI can hide
+        // write controls and show the demo banner.
+        useAuthStore.getState().setDemoMode(status.demo_mode ?? false);
+
         // If auth is not configured and a new token is returned, use the new token
         if (!status.auth_configured && status.access_token) {
           useAuthStore.getState().login(
@@ -205,6 +210,7 @@ function App() {
               onValueChange={handleTabChange}
             >
               <SiteHeader />
+              <DemoBanner />
               <div className="relative grow">
                 <TabsContent value="documents" className="absolute top-0 right-0 bottom-0 left-0 overflow-auto">
                   <DocumentManager />
