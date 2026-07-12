@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useGraphStore, RawNodeType, RawEdgeType } from '@/stores/graph'
-import { useBackendState } from '@/stores/state'
+import { useBackendState, useAuthStore } from '@/stores/state'
 import Text from '@/components/ui/Text'
 import Button from '@/components/ui/Button'
 import useLightragGraph from '@/hooks/useLightragGraph'
@@ -19,6 +19,7 @@ const PropertiesView = () => {
   const focusedEdge = useGraphStore.use.focusedEdge()
   const graphDataVersion = useGraphStore.use.graphDataVersion()
   const pipelineBusy = useBackendState.use.pipelineBusy()
+  const demoMode = useAuthStore((state) => state.demoMode)
 
   const { currentElement, currentType } = useMemo(() => {
     let type: 'node' | 'edge' | null = null
@@ -55,9 +56,9 @@ const PropertiesView = () => {
   return (
     <div className="bg-background/80 max-w-xs rounded-lg border-2 p-2 text-xs backdrop-blur-lg">
       {currentType == 'node' ? (
-        <NodePropertiesView node={currentElement as any} pipelineBusy={pipelineBusy} />
+        <NodePropertiesView node={currentElement as any} pipelineBusy={pipelineBusy} readOnly={demoMode} />
       ) : (
-        <EdgePropertiesView edge={currentElement as any} pipelineBusy={pipelineBusy} />
+        <EdgePropertiesView edge={currentElement as any} pipelineBusy={pipelineBusy} readOnly={demoMode} />
       )}
     </div>
   )
@@ -254,7 +255,7 @@ const PropertyRow = ({
   )
 }
 
-const NodePropertiesView = ({ node, pipelineBusy }: { node: NodeType; pipelineBusy: boolean }) => {
+const NodePropertiesView = ({ node, pipelineBusy, readOnly = false }: { node: NodeType; pipelineBusy: boolean; readOnly?: boolean }) => {
   const { t } = useTranslation()
 
   const handleExpandNode = () => {
@@ -329,7 +330,7 @@ const NodePropertiesView = ({ node, pipelineBusy }: { node: NodeType; pipelineBu
                 nodeId={String(node.id)}
                 entityId={node.properties['entity_id']}
                 entityType="node"
-                isEditable={name === 'description' || name === 'entity_id' || name === 'entity_type'}
+                isEditable={!readOnly && (name === 'description' || name === 'entity_id' || name === 'entity_type')}
                 truncate={node.properties['truncate']}
                 pipelineBusy={pipelineBusy}
               />
@@ -361,7 +362,7 @@ const NodePropertiesView = ({ node, pipelineBusy }: { node: NodeType; pipelineBu
   )
 }
 
-const EdgePropertiesView = ({ edge, pipelineBusy }: { edge: EdgeType; pipelineBusy: boolean }) => {
+const EdgePropertiesView = ({ edge, pipelineBusy, readOnly = false }: { edge: EdgeType; pipelineBusy: boolean; readOnly?: boolean }) => {
   const { t } = useTranslation()
   return (
     <div className="flex flex-col gap-2">
@@ -416,7 +417,7 @@ const EdgePropertiesView = ({ edge, pipelineBusy }: { edge: EdgeType; pipelineBu
                 entityType="edge"
                 sourceId={edge.sourceNode?.properties['entity_id'] || edge.source}
                 targetId={edge.targetNode?.properties['entity_id'] || edge.target}
-                isEditable={name === 'description' || name === 'keywords'}
+                isEditable={!readOnly && (name === 'description' || name === 'keywords')}
                 truncate={edge.properties['truncate']}
                 pipelineBusy={pipelineBusy}
               />

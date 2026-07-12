@@ -651,6 +651,29 @@ def parse_args() -> argparse.Namespace:
     args.token_auto_renew = get_env_value("TOKEN_AUTO_RENEW", True, bool)
     args.token_renew_threshold = get_env_value("TOKEN_RENEW_THRESHOLD", 0.5, float)
 
+    # Public read-only demo mode. When DEMO=true the deployment runs as a public
+    # demo: authentication is disabled (so the WebUI loads without prompting for
+    # a key) and a read-only middleware blocks every mutating/destructive route
+    # (see lightrag/api/demo.py). This is the single place that forces open auth
+    # — blanking the API key and auth accounts here makes AuthHandler,
+    # /auth-status and the whole auth stack naturally report "disabled" mode.
+    args.demo = get_env_value("DEMO", False, bool)
+    args.demo_rate_limit_per_minute = get_env_value(
+        "DEMO_RATE_LIMIT_PER_MINUTE", 20, int
+    )
+    # Number of trusted proxy hops in front of the app. The per-IP rate limiter
+    # keys on the X-Forwarded-For entry this many hops from the RIGHT — the one
+    # stamped by the nearest trusted proxy (Render's edge = 1 hop), which a
+    # client cannot forge. Bump this if a fork sits behind an extra proxy (e.g.
+    # Cloudflare in front of Render → 2).
+    args.demo_trusted_proxy_hops = get_env_value("DEMO_TRUSTED_PROXY_HOPS", 1, int)
+    if args.demo:
+        logging.warning(
+            "DEMO mode: authentication disabled — server is PUBLIC and READ-ONLY"
+        )
+        args.key = None
+        args.auth_accounts = ""
+
     # Rerank model configuration
     args.rerank_model = get_env_value("RERANK_MODEL", None)
     args.rerank_binding_host = get_env_value("RERANK_BINDING_HOST", None)

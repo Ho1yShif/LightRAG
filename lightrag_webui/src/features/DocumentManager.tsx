@@ -39,7 +39,7 @@ import {
 } from '@/api/lightrag'
 import { errorMessage } from '@/lib/utils'
 import { toast } from 'sonner'
-import { useBackendState } from '@/stores/state'
+import { useBackendState, useAuthStore } from '@/stores/state'
 import { copyToClipboard } from '@/utils/clipboard'
 
 import { RefreshCwIcon, ActivityIcon, ArrowUpIcon, ArrowDownIcon, RotateCcwIcon, CheckSquareIcon, XIcon, AlertTriangle, Info, CopyIcon } from 'lucide-react'
@@ -395,6 +395,7 @@ export default function DocumentManager() {
   const { t, i18n } = useTranslation()
   const health = useBackendState.use.health()
   const pipelineActive = useBackendState.use.pipelineActive()
+  const demoMode = useAuthStore((state) => state.demoMode)
 
   // Legacy state for backward compatibility
   const [docs, setDocs] = useState<DocsStatusesResponse | null>(null)
@@ -1375,15 +1376,17 @@ export default function DocumentManager() {
       <CardContent className="flex-1 flex flex-col min-h-0 overflow-auto">
         <div className="flex justify-between items-center gap-2 mb-2">
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={scanDocuments}
-              side="bottom"
-              tooltip={t('documentPanel.documentManager.scanTooltip')}
-              size="sm"
-            >
-              <RefreshCwIcon /> {t('documentPanel.documentManager.scanButton')}
-            </Button>
+            {!demoMode && (
+              <Button
+                variant="outline"
+                onClick={scanDocuments}
+                side="bottom"
+                tooltip={t('documentPanel.documentManager.scanTooltip')}
+                size="sm"
+              >
+                <RefreshCwIcon /> {t('documentPanel.documentManager.scanButton')}
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={() => setShowPipelineStatus(true)}
@@ -1413,7 +1416,7 @@ export default function DocumentManager() {
           )}
 
           <div className="flex gap-2">
-            {isSelectionMode && (
+            {!demoMode && isSelectionMode && (
               <DeleteDocumentsDialog
                 selectedDocIds={selectedDocIds}
                 onDocumentsDeleted={handleDocumentsDeleted}
@@ -1436,13 +1439,15 @@ export default function DocumentManager() {
                   </Button>
                 );
               })()
-            ) : !isSelectionMode ? (
+            ) : !isSelectionMode && !demoMode ? (
               <ClearDocumentsDialog onDocumentsCleared={handleDocumentsCleared} />
             ) : null}
-            <UploadDocumentsDialog
-              onUploadBatchAccepted={() => startActivityProbe('upload')}
-              onDocumentsUploaded={async () => { refreshDocumentsThrottled() }}
-            />
+            {!demoMode && (
+              <UploadDocumentsDialog
+                onUploadBatchAccepted={() => startActivityProbe('upload')}
+                onDocumentsUploaded={async () => { refreshDocumentsThrottled() }}
+              />
+            )}
             <PipelineStatusDialog
               open={showPipelineStatus}
               onOpenChange={setShowPipelineStatus}

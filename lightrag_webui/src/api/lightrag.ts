@@ -328,6 +328,7 @@ export type AuthStatusResponse = {
   api_version?: string
   webui_title?: string
   webui_description?: string
+  demo_mode?: boolean
 }
 
 export type PipelineStatusResponse = {
