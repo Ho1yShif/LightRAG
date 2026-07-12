@@ -76,14 +76,26 @@ RATE_LIMITED_ROUTES: frozenset[Tuple[str, str]] = frozenset(
 
 
 class _FixedWindowRateLimiter:
-    """Per-key fixed-window counter (60s windows), in-memory, single-process."""
+    """Per-key fixed-window counter (60s windows), in-memory, single-process.
+
+    ``_buckets`` is bounded so a public endpoint cannot be driven to exhaust
+    process memory with distinct keys: fully-elapsed windows are purged lazily
+    (at most once per window, amortized O(n)/min) and a hard ``MAX_KEYS`` cap is
+    enforced as defense-in-depth. Neither affects a key that is actively within
+    its window — the ``(allowed, retry_after_seconds)`` contract is unchanged.
+    """
 
     WINDOW_SECONDS = 60.0
+    MAX_KEYS = 10_000
 
     def __init__(self, limit_per_minute: int) -> None:
         self.limit = limit_per_minute
         # key -> (window_start_monotonic, count)
         self._buckets: Dict[str, Tuple[float, int]] = {}
+        # Seeded lazily from the first ``now`` seen so __init__ stays free of
+        # any wall/monotonic-clock call (keeps the "time passed in" design the
+        # tests rely on).
+        self._last_purge: float | None = None
 
     def check(self, key: str, now: float) -> Tuple[bool, int]:
         """Record a hit for ``key`` and report whether it is allowed.
@@ -92,6 +104,24 @@ class _FixedWindowRateLimiter:
         hit is NOT counted and ``retry_after_seconds`` is the whole seconds
         remaining in the current window (>= 1).
         """
+        # Purge fully-elapsed windows at most once per window (amortized
+        # O(n)/min). Does not touch any window still within WINDOW_SECONDS.
+        if self._last_purge is None:
+            self._last_purge = now
+        if now - self._last_purge >= self.WINDOW_SECONDS:
+            self._buckets = {
+                k: (start, count)
+                for k, (start, count) in self._buckets.items()
+                if now - start < self.WINDOW_SECONDS
+            }
+            self._last_purge = now
+        # Hard cap: if still oversized, drop the oldest windows.
+        if len(self._buckets) >= self.MAX_KEYS and key not in self._buckets:
+            for k in sorted(self._buckets, key=lambda k: self._buckets[k][0])[
+                : self.MAX_KEYS // 10
+            ]:
+                del self._buckets[k]
+
         start, count = self._buckets.get(key, (now, 0))
         if now - start >= self.WINDOW_SECONDS:
             # Window elapsed — reset.
@@ -105,17 +135,24 @@ class _FixedWindowRateLimiter:
         return True, 0
 
 
-def _client_ip(scope) -> str:
+def _client_ip(scope, trusted_proxy_hops: int = 1) -> str:
     """Best-effort client IP for rate limiting.
 
-    Honors the left-most ``X-Forwarded-For`` entry (Render and most proxies set
-    it) and falls back to the ASGI transport peer.
+    Uses the ``X-Forwarded-For`` entry ``trusted_proxy_hops`` from the RIGHT —
+    the value stamped by the nearest trusted proxy (e.g. Render's edge), which a
+    client cannot forge. The left-most entries are client-controlled: a visitor
+    can send any ``X-Forwarded-For`` they like, so trusting the left-most would
+    let them mint a fresh rate-limit bucket per request and bypass the per-IP
+    cap entirely. Falls back to the ASGI transport peer when XFF is absent.
     """
     for name, value in scope.get("headers", []):
         if name == b"x-forwarded-for":
-            forwarded = value.decode("latin-1").split(",")[0].strip()
-            if forwarded:
-                return forwarded
+            parts = [
+                p.strip() for p in value.decode("latin-1").split(",") if p.strip()
+            ]
+            if parts:
+                idx = max(0, len(parts) - trusted_proxy_hops)
+                return parts[idx]
     client = scope.get("client")
     if client:
         return client[0]
@@ -130,10 +167,17 @@ class DemoReadOnlyMiddleware:
     runs and so it composes cleanly with the CORS layer.
     """
 
-    def __init__(self, app, api_prefix: str = "", rate_limit_per_minute: int = 0):
+    def __init__(
+        self,
+        app,
+        api_prefix: str = "",
+        rate_limit_per_minute: int = 0,
+        trusted_proxy_hops: int = 1,
+    ):
         self.app = app
         self.api_prefix = api_prefix or ""
         self.rate_limit_per_minute = rate_limit_per_minute
+        self.trusted_proxy_hops = max(1, trusted_proxy_hops)
         self._limiter = (
             _FixedWindowRateLimiter(rate_limit_per_minute)
             if rate_limit_per_minute and rate_limit_per_minute > 0
@@ -180,7 +224,7 @@ class DemoReadOnlyMiddleware:
 
         if self._limiter is not None and key in RATE_LIMITED_ROUTES:
             allowed, retry_after = self._limiter.check(
-                _client_ip(scope), time.monotonic()
+                _client_ip(scope, self.trusted_proxy_hops), time.monotonic()
             )
             if not allowed:
                 response = JSONResponse(

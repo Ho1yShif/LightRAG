@@ -1398,6 +1398,7 @@ def create_app(args):
             DemoReadOnlyMiddleware,
             api_prefix=api_prefix,
             rate_limit_per_minute=getattr(args, "demo_rate_limit_per_minute", 0),
+            trusted_proxy_hops=getattr(args, "demo_trusted_proxy_hops", 1),
         )
 
     # Add CORS middleware

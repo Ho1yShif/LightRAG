@@ -661,6 +661,12 @@ def parse_args() -> argparse.Namespace:
     args.demo_rate_limit_per_minute = get_env_value(
         "DEMO_RATE_LIMIT_PER_MINUTE", 20, int
     )
+    # Number of trusted proxy hops in front of the app. The per-IP rate limiter
+    # keys on the X-Forwarded-For entry this many hops from the RIGHT — the one
+    # stamped by the nearest trusted proxy (Render's edge = 1 hop), which a
+    # client cannot forge. Bump this if a fork sits behind an extra proxy (e.g.
+    # Cloudflare in front of Render → 2).
+    args.demo_trusted_proxy_hops = get_env_value("DEMO_TRUSTED_PROXY_HOPS", 1, int)
     if args.demo:
         logging.warning(
             "DEMO mode: authentication disabled — server is PUBLIC and READ-ONLY"

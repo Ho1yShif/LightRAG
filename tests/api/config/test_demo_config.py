@@ -30,6 +30,7 @@ _ENV_VARS_TO_ISOLATE = (
     "TOKEN_SECRET",
     "DEMO",
     "DEMO_RATE_LIMIT_PER_MINUTE",
+    "DEMO_TRUSTED_PROXY_HOPS",
 )
 
 
@@ -92,6 +93,19 @@ def test_demo_rate_limit_parsed(monkeypatch):
     args = _parse_args()
 
     assert args.demo_rate_limit_per_minute == 5
+
+
+def test_demo_trusted_proxy_hops_defaults_to_one():
+    args = _parse_args()
+    assert args.demo_trusted_proxy_hops == 1
+
+
+def test_demo_trusted_proxy_hops_override_parses_int(monkeypatch):
+    monkeypatch.setenv("DEMO_TRUSTED_PROXY_HOPS", "2")
+
+    args = _parse_args()
+
+    assert args.demo_trusted_proxy_hops == 2
 
 
 def test_non_demo_keeps_api_key(monkeypatch):

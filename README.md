@@ -144,6 +144,14 @@ Want to share a live, no-login demo of a knowledge base you've built? Set
   queries on. The counter is per process (not shared across gunicorn workers or
   instances) — fine for a single-instance starter demo.
 
+  The limiter keys on the client IP taken from the `X-Forwarded-For` header,
+  reading it from the **right** so it uses the address stamped by the trusted
+  edge proxy rather than a client-supplied value (which could otherwise be
+  spoofed to mint a fresh bucket per request). `DEMO_TRUSTED_PROXY_HOPS`
+  (default `1`) controls how many hops from the right to read — `1` is correct
+  for a plain Render deploy; bump it to `2` if your fork sits behind an extra
+  proxy (e.g. Cloudflare in front of Render).
+
 Your LLM/embedding provider keys are still required: the demo answers real
 queries on your account. Default `DEMO=false` keeps forks fully token-gated
 unless you opt in.

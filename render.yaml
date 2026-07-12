@@ -57,3 +57,10 @@ services:
       # Note: per-process (not shared across gunicorn workers / instances).
       - key: DEMO_RATE_LIMIT_PER_MINUTE
         value: 20
+      # Trusted proxy hops in front of the app. The limiter keys on the
+      # X-Forwarded-For entry this many hops from the right — the one Render's
+      # edge stamps, which a client cannot forge. 1 is correct for a plain
+      # Render deploy; bump to 2 if a fork puts another proxy in front (e.g.
+      # Cloudflare → Render).
+      - key: DEMO_TRUSTED_PROXY_HOPS
+        value: 1
