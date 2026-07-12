@@ -476,7 +476,7 @@
     "loading": "Loading API Documentation..."
   },
   "apiKeyAlert": {
-    "title": "API Key is required",
+    "title": "LIGHTRAG_API_KEY",
     "description": "Please enter your API key to access the service",
     "placeholder": "Enter your API key",
     "save": "Save"
