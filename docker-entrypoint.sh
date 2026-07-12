@@ -16,6 +16,16 @@ if [ "${1#-}" != "$1" ]; then
     set -- python -m lightrag.api.lightrag_server "$@"
 fi
 
+# On Render, default CORS to this service's own origin instead of LightRAG's
+# "*" default. Only applied when the user hasn't set CORS_ORIGINS and Render
+# supplies its external URL, so non-Render deployments are left untouched.
+# (Done here rather than in the Blueprint's dockerCommand: an sh -c wrapper
+# passed as CMD args through this ENTRYPOINT + gosu is not reconstructed into a
+# valid shell invocation, so it must live in the entrypoint itself.)
+if [ -z "${CORS_ORIGINS}" ] && [ -n "${RENDER_EXTERNAL_URL}" ]; then
+    export CORS_ORIGINS="${RENDER_EXTERNAL_URL}"
+fi
+
 if [ "$(id -u)" = "0" ]; then
     # Take ownership of the writable data locations so the dropped-privilege
     # process can read/write them, covering bind-mounts/PVCs whose host content
