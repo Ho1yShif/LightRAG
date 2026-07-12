@@ -68,6 +68,51 @@ Defaults use **OpenAI** for both the LLM (`gpt-5.4-mini`) and embeddings
 3. Upload documents and let LightRAG build the knowledge graph, then query them
    from the UI or via the REST API (send your key as the `X-API-Key` header).
 
+### Using the app
+
+Want to see it work end to end in a couple of minutes? Use LightRAG's own demo
+document — *A Christmas Carol*, the same `book.txt` the project's
+[`examples/`](./examples) run against — so you can reproduce the canonical results.
+
+1. **Log in.** Open `https://<your-service>.onrender.com/webui` and paste your
+   `LIGHTRAG_API_KEY` when prompted.
+2. **Grab the demo document** (any plain-text file works, but this keeps results
+   reproducible):
+
+   ```bash
+   curl https://www.gutenberg.org/cache/epub/46/pg46.txt -o book.txt
+   ```
+
+3. **Upload it.** Go to the **Documents** tab, click **Upload**, and drop in
+   `book.txt`. Supported types include TXT, MD, PDF, DOCX, PPTX, and more.
+4. **Watch the graph build.** The document moves through *Pending → Processing →
+   Processed* in the Documents list while LightRAG extracts entities and relations.
+   Open the **Knowledge Graph** tab to watch the graph fill in — nodes are
+   characters and concepts (Scrooge, Marley, Christmas), edges are their
+   relationships.
+5. **Query it.** On the **Retrieval** tab, ask the demo's canonical question:
+
+   > What are the top themes in this story?
+
+   Switch the retrieval **mode** to compare how the app answers: `naive` (plain
+   vector search) vs. `local` / `global` / `hybrid` / `mix` (graph-aware
+   retrieval). You can also prefix a query inline, e.g. `/global What are the top
+   themes in this story?`.
+
+Prefer the API? The same flow over REST (send your key as `X-API-Key`):
+
+```bash
+# Ingest raw text
+curl -X POST https://<your-service>.onrender.com/documents/text \
+  -H "X-API-Key: $LIGHTRAG_API_KEY" -H "Content-Type: application/json" \
+  -d '{"text": "Scrooge was a tight-fisted hand at the grindstone.", "file_source": "demo"}'
+
+# Query it
+curl -X POST https://<your-service>.onrender.com/query \
+  -H "X-API-Key: $LIGHTRAG_API_KEY" -H "Content-Type: application/json" \
+  -d '{"query": "What are the top themes in this story?", "mode": "hybrid"}'
+```
+
 ## Configuration
 
 The env vars above are the minimum. See [`.env.example`](./.env.example) for the
