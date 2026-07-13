@@ -4,7 +4,7 @@ Deploy [LightRAG](https://github.com/HKUDS/LightRAG) on Render in one click. Get
 knowledge-graph RAG server with a built-in Web UI — upload documents, and query
 them with graph-aware retrieval backed by your own LLM.
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Ho1yShif/LightRAG)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/render-examples/LightRAG)
 
 https://github.com/user-attachments/assets/db6ede7b-4a3c-48c5-8536-0842a02d554e
 
