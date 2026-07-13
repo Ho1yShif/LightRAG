@@ -127,6 +127,29 @@ The Blueprint defaults `CORS_ORIGINS` to the service's own origin (via Render's
 you put a **separate-origin** frontend in front of the API, set `CORS_ORIGINS` to
 that frontend's origin.
 
+## Cost expectations
+
+Two things cost money here — Render infrastructure and your LLM/embedding provider.
+
+- **Render.** The Blueprint provisions a `starter` web service plus a 1 GB
+  persistent disk (a disk requires a paid instance type, hence `starter` rather
+  than free). See [Render pricing](https://render.com/pricing) for current rates;
+  the disk is billed per GB on top of the instance. Moving to
+  [Render Postgres](#production-storage-render-postgres) adds that database's cost.
+- **OpenAI.** You pay OpenAI per token for every ingest and query — this is usually
+  the larger, more variable cost. Ingestion is the expensive part: LightRAG makes
+  many LLM calls per document to extract entities and relations (a book-length file
+  is far more than a single call), plus embeddings for every chunk. Queries are
+  cheaper but still bill per call, and graph-aware modes (`hybrid` / `mix`) use more
+  tokens than `naive`. The `gpt-5.4-mini` default is chosen to keep this low;
+  switching `LLM_MODEL` to a `gpt-5.6-*` flagship raises quality **and** cost. See
+  [OpenAI pricing](https://openai.com/api/pricing/).
+
+**To control spend:** ingest only the documents you need (re-ingesting reprocesses
+from scratch), keep the cheaper default model, and — for a public demo — use
+`DEMO=true`, which blocks ingestion entirely and rate-limits queries per IP so a
+shared link can't run up your provider bill (see below).
+
 ## Public read-only demo mode
 
 Want to share a live, no-login demo of a knowledge base you've built? Set
