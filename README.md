@@ -6,6 +6,8 @@ them with graph-aware retrieval backed by your own LLM.
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Ho1yShif/LightRAG)
 
+https://github.com/user-attachments/assets/db6ede7b-4a3c-48c5-8536-0842a02d554e
+
 ## What it does
 
 LightRAG combines a vector store with an automatically-extracted knowledge graph
