@@ -1,0 +1,66 @@
+services:
+  - type: web
+    name: lightrag
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter # a persistent disk requires a paid instance type
+    healthCheckPath: /health # public liveness probe (WHITELIST_PATHS default)
+    # CORS defaults to this service's own origin (RENDER_EXTERNAL_URL) instead of
+    # LightRAG's "*" default. The Web UI is same-origin so this is transparent to
+    # it; a forker with a SEPARATE-origin frontend sets CORS_ORIGINS explicitly.
+    # This default is applied in docker-entrypoint.sh (not here) because a shell
+    # wrapper in dockerCommand does not survive the image ENTRYPOINT + gosu drop.
+    disk:
+      name: lightrag-data
+      mountPath: /app/data
+      sizeGB: 1
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: "9621"
+      - key: WORKING_DIR
+        value: /app/data/rag_storage
+      - key: INPUT_DIR
+        value: /app/data/inputs
+      - key: LLM_BINDING
+        value: openai
+      - key: LLM_BINDING_HOST
+        value: https://api.openai.com/v1
+      - key: LLM_MODEL
+        value: gpt-5.4-mini
+      - key: LLM_BINDING_API_KEY
+        sync: false # your OpenAI API key
+      - key: EMBEDDING_BINDING
+        value: openai
+      - key: EMBEDDING_BINDING_HOST
+        value: https://api.openai.com/v1
+      - key: EMBEDDING_MODEL
+        value: text-embedding-3-large
+      - key: EMBEDDING_DIM
+        value: "3072"
+      - key: EMBEDDING_BINDING_API_KEY
+        sync: false # same OpenAI API key
+      - key: LIGHTRAG_API_KEY
+        sync: false # protects the deployed server; set to a strong secret
+        # NOTE: LIGHTRAG_API_KEY is IGNORED when DEMO=true (see below).
+      # DEMO mode: run this deployment as a PUBLIC, READ-ONLY demo. Authentication
+      # is disabled (the Web UI loads without a key prompt) and every mutating
+      # operation (upload/insert/edit/delete/merge) is blocked. Visitors can
+      # browse the knowledge graph and run LLM queries. Default false keeps the
+      # deployment fully token-gated. LLM/embedding provider keys are still
+      # required — the demo answers real queries on your provider account.
+      - key: DEMO
+        value: "false"
+      # Per-IP cap (fixed 60s window) on LLM-invoking query endpoints; protects
+      # your provider key on a public demo. Only active when DEMO=true. 0 disables.
+      # Note: per-process (not shared across gunicorn workers / instances).
+      - key: DEMO_RATE_LIMIT_PER_MINUTE
+        value: "20"
+      # Trusted proxy hops in front of the app. The limiter keys on the
+      # X-Forwarded-For entry this many hops from the right — the one Render's
+      # edge stamps, which a client cannot forge. 1 is correct for a plain
+      # Render deploy; bump to 2 if a fork puts another proxy in front (e.g.
+      # Cloudflare → Render).
+      - key: DEMO_TRUSTED_PROXY_HOPS
+        value: "1"
