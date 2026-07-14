@@ -9,7 +9,7 @@ import { useBackendState, useAuthStore } from '@/stores/state'
 import { useSettingsStore } from '@/stores/settings'
 import { getAuthStatus } from '@/api/lightrag'
 import SiteHeader from '@/features/SiteHeader'
-import { InvalidApiKeyError, RequireApiKeError } from '@/api/lightrag'
+import { InvalidApiKeyError, RequireApiKeyError } from '@/api/lightrag'
 import { ZapIcon } from 'lucide-react'
 
 import GraphViewer from '@/features/GraphViewer'
@@ -175,7 +175,7 @@ function App() {
   const [previousMessage, setPreviousMessage] = useState(message)
   if (message !== previousMessage) {
     setPreviousMessage(message)
-    if (message && (message.includes(InvalidApiKeyError) || message.includes(RequireApiKeError))) {
+    if (message && (message.includes(InvalidApiKeyError) || message.includes(RequireApiKeyError))) {
       setApiKeyAlertOpen(true)
     }
   }

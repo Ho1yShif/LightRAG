@@ -362,7 +362,7 @@ export type LoginResponse = {
 }
 
 export const InvalidApiKeyError = 'Invalid API Key'
-export const RequireApiKeError = 'API Key required'
+export const RequireApiKeyError = 'API Key required'
 
 /**
  * Detect an API-key auth failure from a response and return its `detail`.
@@ -379,7 +379,7 @@ export const apiKeyErrorDetail = (status: number, data: unknown): string | null 
   if (status !== 403) return null
   if (typeof data !== 'object' || data === null || !('detail' in data)) return null
   const detail = String((data as { detail: unknown }).detail ?? '')
-  if (detail.includes(InvalidApiKeyError) || detail.includes(RequireApiKeError)) {
+  if (detail.includes(InvalidApiKeyError) || detail.includes(RequireApiKeyError)) {
     return detail
   }
   return null
@@ -555,7 +555,7 @@ axiosInstance.interceptors.response.use(
       const apiKeyDetail = apiKeyErrorDetail(error.response.status, error.response.data)
       if (apiKeyDetail) {
         const { useBackendState } = await import('@/stores/state')
-        useBackendState.getState().setErrorMessage(apiKeyDetail, RequireApiKeError)
+        useBackendState.getState().setErrorMessage(apiKeyDetail, RequireApiKeyError)
       }
 
       throw new Error(

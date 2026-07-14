@@ -11,7 +11,7 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { useSettingsStore } from '@/stores/settings'
 import { useBackendState } from '@/stores/state'
-import { InvalidApiKeyError, RequireApiKeError } from '@/api/lightrag'
+import { InvalidApiKeyError, RequireApiKeyError } from '@/api/lightrag'
 
 interface ApiKeyAlertProps {
   open: boolean;
@@ -32,7 +32,7 @@ const ApiKeyAlert = ({ open: opened, onOpenChange: setOpened }: ApiKeyAlertProps
 
   useEffect(() => {
     if (message) {
-      if (message.includes(InvalidApiKeyError) || message.includes(RequireApiKeError)) {
+      if (message.includes(InvalidApiKeyError) || message.includes(RequireApiKeyError)) {
         setOpened(true)
       }
     }
@@ -77,7 +77,7 @@ const ApiKeyAlert = ({ open: opened, onOpenChange: setOpened }: ApiKeyAlertProps
           {/* Don't surface the "API Key required" 403 as an error: on first load
               it just means no key has been entered yet, and the dialog itself is
               the prompt. Only show genuine errors (e.g. an invalid key). */}
-          {message && !message.includes(RequireApiKeError) && (
+          {message && !message.includes(RequireApiKeyError) && (
             <div className="text-sm text-red-500">
               {message}
             </div>
