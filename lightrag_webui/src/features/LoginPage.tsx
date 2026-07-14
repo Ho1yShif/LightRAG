@@ -45,6 +45,14 @@ const LoginPage = () => {
         // Check auth status
         const status = await getAuthStatus()
 
+        // Surface server-driven modes here too: this component sets
+        // VERSION_CHECKED_FROM_LOGIN, which makes App skip its own init, so the
+        // flags must be seeded on the login path as well. api_key_required
+        // drives the header label; the ApiKeyAlert itself opens once a
+        // protected request 403s (see the axios interceptor).
+        useAuthStore.getState().setDemoMode(status.demo_mode ?? false)
+        useAuthStore.getState().setApiKeyRequired(status.api_key_required ?? false)
+
         // Set session flag for version check to avoid duplicate checks in App component
         if (status.core_version || status.api_version) {
           sessionStorage.setItem('VERSION_CHECKED_FROM_LOGIN', 'true');

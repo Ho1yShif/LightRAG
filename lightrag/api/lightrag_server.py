@@ -2178,6 +2178,13 @@ def create_app(args):
     async def get_auth_status():
         """Get authentication status and guest token if auth is not configured"""
 
+        # API-key-only profile: a key is configured but no password accounts.
+        # The guest token below is deliberately NOT honored on protected routes
+        # in this mode (GHSA-f4vv-55c2-5789), so the WebUI must know it has to
+        # supply X-API-Key rather than silently entering "Login Free" guest
+        # mode. ``demo_mode`` blanks ``api_key``, so this is False for demos.
+        api_key_required = bool(api_key) and not auth_handler.accounts
+
         if not auth_handler.accounts:
             # Authentication not configured, return guest token
             guest_token = auth_handler.create_token(
@@ -2188,6 +2195,7 @@ def create_app(args):
                 "access_token": guest_token,
                 "token_type": "bearer",
                 "auth_mode": "disabled",
+                "api_key_required": api_key_required,
                 "message": "Authentication is disabled. Using guest access.",
                 "core_version": core_version,
                 "api_version": api_version_display,
@@ -2199,6 +2207,7 @@ def create_app(args):
         return {
             "auth_configured": True,
             "auth_mode": "enabled",
+            "api_key_required": api_key_required,
             "core_version": core_version,
             "api_version": api_version_display,
             "webui_title": webui_title,

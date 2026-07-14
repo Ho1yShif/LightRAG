@@ -117,6 +117,17 @@ function App() {
         // write controls and show the demo banner.
         useAuthStore.getState().setDemoMode(status.demo_mode ?? false);
 
+        // API-key-only mode (key configured, no password accounts): the guest
+        // token below is NOT accepted on protected routes, so prompt for the
+        // X-API-Key up front unless the user already stored one. Without this
+        // the app enters "Login Free" guest mode and every data request 403s
+        // with no visible way to supply a key (/health stays 200, so the
+        // health-check-driven prompt never fires).
+        useAuthStore.getState().setApiKeyRequired(status.api_key_required ?? false);
+        if (status.api_key_required && !useSettingsStore.getState().apiKey) {
+          setApiKeyAlertOpen(true);
+        }
+
         // If auth is not configured and a new token is returned, use the new token
         if (!status.auth_configured && status.access_token) {
           useAuthStore.getState().login(
