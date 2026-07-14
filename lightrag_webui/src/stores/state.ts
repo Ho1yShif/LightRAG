@@ -37,6 +37,7 @@ interface AuthState {
   lastTokenRenewal: string | null; // Human-readable local time of last token renewal (for debugging and monitoring)
   tokenExpiresAt: number | null; // Token expiration timestamp (extracted from JWT)
   demoMode: boolean; // Server-driven read-only public demo flag (from /auth-status; not persisted)
+  apiKeyRequired: boolean; // Server-driven API-key-only mode flag (from /auth-status; not persisted)
 
   login: (token: string, isGuest?: boolean, coreVersion?: string | null, apiVersion?: string | null, webuiTitle?: string | null, webuiDescription?: string | null) => void;
   logout: () => void;
@@ -44,6 +45,7 @@ interface AuthState {
   setCustomTitle: (webuiTitle: string | null, webuiDescription: string | null) => void;
   setTokenRenewal: (renewalTime: number, expiresAt: number) => void; // Track token renewal
   setDemoMode: (demoMode: boolean) => void; // Set read-only demo flag from server
+  setApiKeyRequired: (apiKeyRequired: boolean) => void; // Set API-key-only mode flag from server
 }
 
 const useBackendStateStoreBase = create<BackendState>()((set, get) => ({
@@ -256,6 +258,7 @@ export const useAuthStore = create<AuthState>(set => {
     lastTokenRenewal: initialState.lastTokenRenewal,
     tokenExpiresAt: initialState.tokenExpiresAt,
     demoMode: false,
+    apiKeyRequired: false,
 
     login: (token, isGuest = false, coreVersion = null, apiVersion = null, webuiTitle = null, webuiDescription = null) => {
       localStorage.setItem('LIGHTRAG-API-TOKEN', token);
@@ -374,6 +377,10 @@ export const useAuthStore = create<AuthState>(set => {
 
     setDemoMode: (demoMode) => {
       set({ demoMode });
+    },
+
+    setApiKeyRequired: (apiKeyRequired) => {
+      set({ apiKeyRequired });
     }
   };
 });

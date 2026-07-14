@@ -57,7 +57,7 @@ function TabsNavigation() {
 
 export default function SiteHeader() {
   const { t } = useTranslation()
-  const { isGuestMode, coreVersion, apiVersion, username, webuiTitle, webuiDescription } = useAuthStore()
+  const { isGuestMode, apiKeyRequired, coreVersion, apiVersion, username, webuiTitle, webuiDescription } = useAuthStore()
 
   const versionDisplay = (coreVersion && apiVersion)
     ? `${coreVersion}/${apiVersion}`
@@ -103,7 +103,14 @@ export default function SiteHeader() {
 
       <div className="flex h-10 flex-1 items-center justify-center">
         <TabsNavigation />
-        {isGuestMode && (
+        {/* API-key-only mode is technically a guest token, but the user must
+            supply a key — showing "Login Free" would be misleading, so surface
+            the API-key requirement instead. */}
+        {apiKeyRequired ? (
+          <div className="ml-2 self-center px-2 py-1 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-md">
+            {t('login.apiKeyMode', 'API Key')}
+          </div>
+        ) : isGuestMode && (
           <div className="ml-2 self-center px-2 py-1 text-xs bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 rounded-md">
             {t('login.guestMode', 'Guest Mode')}
           </div>

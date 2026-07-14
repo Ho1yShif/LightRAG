@@ -323,6 +323,10 @@ export type AuthStatusResponse = {
   access_token?: string
   token_type?: string
   auth_mode?: 'enabled' | 'disabled'
+  // True when the server runs in API-key-only mode (a key is configured but no
+  // password accounts). The guest token handed back here is NOT accepted on
+  // protected routes in that mode, so the WebUI must prompt for the X-API-Key.
+  api_key_required?: boolean
   message?: string
   core_version?: string
   api_version?: string
@@ -359,6 +363,27 @@ export type LoginResponse = {
 
 export const InvalidApiKeyError = 'Invalid API Key'
 export const RequireApiKeError = 'API Key required'
+
+/**
+ * Detect an API-key auth failure from a response and return its `detail`.
+ *
+ * In API-key-only mode (LIGHTRAG_API_KEY set, no AUTH_ACCOUNTS) every protected
+ * route answers 403 `{"detail":"API Key required"}` when no `X-API-Key` is sent
+ * (or `Invalid API Key` when a wrong one is). `/health` is whitelisted and stays
+ * 200, so the health-check message can't surface this — the ApiKeyAlert must be
+ * driven off these data-endpoint 403s instead. Returns the detail string when
+ * the response is such an error, or `null` otherwise (including a demo-mode 403,
+ * whose detail does not match). Kept pure and exported for unit testing.
+ */
+export const apiKeyErrorDetail = (status: number, data: unknown): string | null => {
+  if (status !== 403) return null
+  if (typeof data !== 'object' || data === null || !('detail' in data)) return null
+  const detail = String((data as { detail: unknown }).detail ?? '')
+  if (detail.includes(InvalidApiKeyError) || detail.includes(RequireApiKeError)) {
+    return detail
+  }
+  return null
+}
 
 // Axios instance
 const axiosInstance = axios.create({
@@ -521,6 +546,18 @@ axiosInstance.interceptors.response.use(
         navigationService.navigateToLogin();
         return Promise.reject(new Error('Authentication required'));
       }
+
+      // API-key-only mode: a protected route rejected us for a missing/invalid
+      // X-API-Key. Surface it through the backend-state message so the existing
+      // ApiKeyAlert opens (App.tsx watches this). /health is whitelisted (200)
+      // so this data-endpoint 403 is the only signal the WebUI gets. Dynamic
+      // import avoids a static import cycle (state.ts imports from this module).
+      const apiKeyDetail = apiKeyErrorDetail(error.response.status, error.response.data)
+      if (apiKeyDetail) {
+        const { useBackendState } = await import('@/stores/state')
+        useBackendState.getState().setErrorMessage(apiKeyDetail, RequireApiKeError)
+      }
+
       throw new Error(
         `${error.response.status} ${error.response.statusText}\n${JSON.stringify(
           error.response.data

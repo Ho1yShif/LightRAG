@@ -263,3 +263,34 @@ describe('isUserAbortError', () => {
     expect(apiModule.isUserAbortError(undefined, new Error('network down'))).toBe(false)
   })
 })
+
+describe('apiKeyErrorDetail', () => {
+  test('returns the detail for a 403 "API Key required" response', () => {
+    expect(
+      apiModule.apiKeyErrorDetail(403, { detail: 'API Key required' })
+    ).toBe('API Key required')
+  })
+
+  test('returns the detail for a 403 "Invalid API Key" response', () => {
+    expect(
+      apiModule.apiKeyErrorDetail(403, { detail: 'Invalid API Key' })
+    ).toBe('Invalid API Key')
+  })
+
+  test('returns null for a 403 that is not an API-key error', () => {
+    expect(
+      apiModule.apiKeyErrorDetail(403, { detail: 'This is a read-only demo; uploading documents is disabled.' })
+    ).toBeNull()
+  })
+
+  test('returns null for non-403 statuses even with a matching detail', () => {
+    expect(apiModule.apiKeyErrorDetail(401, { detail: 'API Key required' })).toBeNull()
+    expect(apiModule.apiKeyErrorDetail(500, { detail: 'API Key required' })).toBeNull()
+  })
+
+  test('tolerates missing or non-object bodies', () => {
+    expect(apiModule.apiKeyErrorDetail(403, undefined)).toBeNull()
+    expect(apiModule.apiKeyErrorDetail(403, 'API Key required')).toBeNull()
+    expect(apiModule.apiKeyErrorDetail(403, { message: 'nope' })).toBeNull()
+  })
+})
