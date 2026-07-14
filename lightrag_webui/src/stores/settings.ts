@@ -8,6 +8,17 @@ type Theme = 'dark' | 'light' | 'system'
 type Language = 'en' | 'zh' | 'fr' | 'ar' | 'zh_TW' | 'ru' | 'ja' | 'de' | 'uk' | 'ko' | 'vi'
 type Tab = 'documents' | 'knowledge-graph' | 'retrieval' | 'api'
 
+/**
+ * Normalize a persisted graph query label. An empty/whitespace `queryLabel` is a
+ * transient runtime sentinel (the graph view clears it to '' when a fetch returns
+ * an empty graph, e.g. while documents are still indexing). If that sentinel is
+ * rehydrated from localStorage the graph never issues another /graphs request and
+ * stays stuck on "Empty (Try Reload Again)". Coerce it back to the default so a
+ * reload always recovers, while leaving real user selections untouched.
+ */
+export const coerceQueryLabel = (label: string | null | undefined): string =>
+  label && label.trim() !== '' ? label : defaultQueryLabel
+
 interface SettingsState {
   // Document manager settings
   showFileName: boolean
@@ -343,6 +354,13 @@ const useSettingsStoreBase = create<SettingsState>()(
           ]
         }
         return state
+      },
+      onRehydrateStorage: () => (state) => {
+        // Repair the transient empty-label sentinel on load so a browser reload
+        // always re-fetches the graph instead of wedging on the empty placeholder.
+        if (state) {
+          state.queryLabel = coerceQueryLabel(state.queryLabel)
+        }
       }
     }
   )
